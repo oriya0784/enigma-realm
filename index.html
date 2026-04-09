@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>謎境 — 數理邏輯遊戲博覽會</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Cinzel:wght@400;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --deep-purple: #1a0a2e;
+  --royal-purple: #2d1b4e;
+  --accent-purple: #6b3fa0;
+  --gold: #d4a843;
+  --gold-light: #f0d078;
+  --gold-dark: #a07820;
+  --cream: #f5e6c8;
+  --parchment: #e8d5b0;
+  --ink: #1a1a1a;
+  --blood-red: #8b1a1a;
+  --sepia: #704214;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Serif TC', serif;
+  background: var(--deep-purple);
+  color: var(--cream);
+  overflow-x: hidden;
+  line-height: 1.8;
+}
+
+/* ========== ENVELOPE INTRO ========== */
+#envelope-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--deep-purple);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.8s ease;
+}
+
+#envelope-intro.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.envelope-hint {
+  color: var(--gold);
+  font-size: 0.9rem;
+  letter-spacing: 0.3em;
+  margin-bottom: 2rem;
+  opacity: 0;
+  animation: fadeInHint 1.5s ease 0.5s forwards;
+}
+
+@keyframes fadeInHint { to { opacity: 0.7; } }
+
+/* The whole envelope is 320×200px */
+.envelope-wrapper {
+  position: relative;
+  width: 320px;
+  height: 200px;
+  perspective: 600px;
+}
+
+/* Envelope body - the rectangle */
+.envelope-body {
+  position: absolute;
+  inset: 0;
+  width: 320px;
+  height: 200px;
+  background: linear-gradient(170deg, #e8d5b0, #d8c8a0);
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+  z-index: 3; /* above letter so letter is hidden inside */
+}
+
+/* Inner V lines on the body */
+.envelope-body::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom right, transparent 49.5%, rgba(160,120,32,0.07) 49.5%, rgba(160,120,32,0.07) 50.5%, transparent 50.5%),
+    linear-gradient(to bottom left, transparent 49.5%, rgba(160,120,32,0.07) 49.5%, rgba(160,120,32,0.07) 50.5%, transparent 50.5%);
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+/* Inner border inset */
+.envelope-body::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(160,120,32,0.15);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Letter inside envelope */
+.letter {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 282px;
+  height: 168px;
+  background: #f8f0e0;
+  border: 1px solid rgba(160,120,32,0.12);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 2; /* below envelope-body(3), so hidden inside */
+  transition: transform 0.85s cubic-bezier(0.3,0,0.2,1);
+}
+
+.letter-text {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  color: var(--sepia);
+  text-align: center;
+  letter-spacing: 0.15em;
+  line-height: 2;
+}
+
+.letter-text .big {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  display: block;
+  margin: 0.3rem 0;
+  letter-spacing: 0.3em;
+}
+
+/*
+  THE FLAP:
+  - A rectangle the same width as the envelope
+  - clip-path cuts it into a triangle pointing DOWN (apex at bottom-center)
+  - Top edge of triangle = top edge of envelope body (perfectly connected)
+  - transform-origin: top center → rotates around the top edge
+  - When opened: rotateX(180deg) flips the apex UP (now points upward)
+  - After flipping, z-index drops so it's behind the letter
+*/
+.envelope-flap {
+  position: absolute;
+  top: 0; left: 0;
+  width: 320px;
+  height: 120px;
+  background: #d2be96;
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+  transform-origin: top center;
+  transition: transform 0.75s cubic-bezier(0.4,0,0.2,1);
+  z-index: 4;
+  /* subtle shade on flap to distinguish from body */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+}
+
+/* Wax seal container — uses inline SVG for realistic wax */
+.wax-seal {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 96px;
+  z-index: 5;
+  transition: opacity 0.3s;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.45));
+}
+
+.wax-seal svg { width: 100%; height: 100%; display: block; }
+
+/* ===== PHASE 1: Flap opens ===== */
+.envelope-wrapper.phase1 .envelope-flap {
+  transform: rotateX(-180deg);
+  z-index: 0; /* behind body(3) and letter(2) */
+}
+
+.envelope-wrapper.phase1 .wax-seal {
+  opacity: 0;
+}
+
+/* ===== PHASE 2: Letter rises ===== */
+.envelope-wrapper.phase2 .letter {
+  transform: translateX(-50%) translateY(-195px);
+}
+
+.click-hint {
+  color: rgba(245,230,200,0.4);
+  font-size: 0.8rem;
+  margin-top: 1.8rem;
+  letter-spacing: 0.2em;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* ========== MAIN SITE (hidden initially) ========== */
+#main-site {
+  display: none;
+}
+
+#main-site.show {
+  display: block;
+  animation: fadeInSite 1s ease;
+}
+
+@keyframes fadeInSite {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ========== BACKGROUND TEXTURE ========== */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(107,63,160,0.18) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 15%, rgba(212,168,67,0.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(80,40,120,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(212,168,67,0.06) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 70%, rgba(107,63,160,0.15) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Subtle Victorian damask pattern overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L30 25 L25 15Z' fill='%23d4a843'/%3E%3Cpath d='M30 35 L35 45 L30 55 L25 45Z' fill='%23d4a843'/%3E%3Cpath d='M5 30 L15 25 L25 30 L15 35Z' fill='%23d4a843'/%3E%3Cpath d='M35 30 L45 25 L55 30 L45 35Z' fill='%23d4a843'/%3E%3Ccircle cx='30' cy='30' r='2' fill='%23d4a843'/%3E%3C/svg%3E");
+  background-size: 80px 80px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ========== VICTORIAN ORNAMENT BORDERS ========== */
+.ornament-line {
+  text-align: center;
+  margin: clamp(0.8rem, 2.5vw, 2rem) 0;
+  font-size: clamp(0.9rem, 2.8vw, 1.5rem);
+  color: var(--gold);
+  letter-spacing: 0.4em;
+  opacity: 0.7;
+}
+
+.ornament-line::before { content: '── ✦ ── ✦ ── ✦ ──'; }
+
+/* ========== NAVIGATION ========== */
+nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  background: linear-gradient(180deg, rgba(26,10,46,0.98) 0%, rgba(26,10,46,0.85) 100%);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(212,168,67,0.3);
+  transition: all 0.3s ease;
+}
+
+nav.scrolled {
+  box-shadow: 0 4px 30px rgba(0,0,0,0.5), 0 1px 0 rgba(212,168,67,0.15);
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.8rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 0.15em;
+}
+
+.nav-links { display: flex; gap: 2rem; list-style: none; }
+
+.nav-links a {
+  color: var(--cream);
+  text-decoration: none;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  transition: color 0.3s;
+  position: relative;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--gold);
+  transition: width 0.3s;
+}
+
+.nav-links a:hover { color: var(--gold); }
+.nav-links a:hover::after { width: 100%; }
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 5px;
+}
+
+.hamburger span {
+  width: 25px;
+  height: 2px;
+  background: var(--gold);
+  transition: all 0.3s;
+}
+
+/* ========== HERO SECTION ========== */
+#hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6rem 2rem 4rem;
+  overflow: hidden;
+}
+
+.thread-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.thread-lines .thread {
+  position: absolute;
+  background: rgba(212,168,67,0.12);
+  transform-origin: center;
+}
+
+.thread-lines .thread:nth-child(1) { width: 1px; height: 120%; top: -10%; left: 15%; transform: rotate(15deg); }
+.thread-lines .thread:nth-child(2) { width: 1px; height: 110%; top: -5%; right: 20%; transform: rotate(-10deg); }
+.thread-lines .thread:nth-child(3) { width: 140%; height: 1px; top: 30%; left: -20%; transform: rotate(-5deg); }
+.thread-lines .thread:nth-child(4) { width: 130%; height: 1px; top: 70%; left: -15%; transform: rotate(3deg); }
+
+.pin {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--blood-red);
+  box-shadow: 0 0 8px rgba(139,26,26,0.6);
+  z-index: 2;
+}
+
+.pin:nth-child(5) { top: 30%; left: 15%; }
+.pin:nth-child(6) { top: 30%; right: 20%; }
+.pin:nth-child(7) { top: 70%; left: 25%; }
+.pin:nth-child(8) { top: 70%; right: 15%; }
+
+.hero-frame {
+  position: relative;
+  z-index: 2;
+  border: 2px solid var(--gold);
+  padding: clamp(1.5rem, 5vw, 3rem) clamp(1.2rem, 6vw, 4rem);
+  background: rgba(26,10,46,0.6);
+  backdrop-filter: blur(5px);
+  width: min(800px, 88vw);
+  box-shadow: 0 0 60px rgba(212,168,67,0.08), 0 0 120px rgba(107,63,160,0.1), inset 0 0 80px rgba(26,10,46,0.5);
+}
+
+.hero-frame::before,
+.hero-frame::after {
+  content: '';
+  position: absolute;
+  width: 30px; height: 30px;
+  border-color: var(--gold-light);
+  border-style: solid;
+}
+
+.hero-frame::before { top: -5px; left: -5px; border-width: 2px 0 0 2px; }
+.hero-frame::after { bottom: -5px; right: -5px; border-width: 0 2px 2px 0; }
+
+.hero-subtitle-top {
+  font-size: clamp(0.55rem, 1.8vw, 0.85rem);
+  letter-spacing: 0.5em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: clamp(0.5rem, 2vw, 1rem);
+  font-family: 'Cinzel', serif;
+}
+
+.hero-title-cn {
+  font-family: 'Noto Serif TC', serif;
+  font-size: clamp(2.2rem, 9vw, 5rem);
+  font-weight: 900;
+  color: var(--gold-light);
+  text-shadow:
+    0 0 40px rgba(212,168,67,0.4),
+    0 0 80px rgba(212,168,67,0.2),
+    0 0 120px rgba(212,168,67,0.1),
+    0 4px 8px rgba(0,0,0,0.6);
+  letter-spacing: 0.3em;
+  margin-bottom: clamp(0.5rem, 2vw, 1rem);
+  line-height: 1.2;
+  animation: titleGlow 4s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    text-shadow:
+      0 0 40px rgba(212,168,67,0.4),
+      0 0 80px rgba(212,168,67,0.2),
+      0 0 120px rgba(212,168,67,0.1),
+      0 4px 8px rgba(0,0,0,0.6);
+  }
+  50% {
+    text-shadow:
+      0 0 50px rgba(240,208,120,0.55),
+      0 0 100px rgba(212,168,67,0.3),
+      0 0 150px rgba(212,168,67,0.15),
+      0 4px 8px rgba(0,0,0,0.6);
+  }
+}
+
+.hero-title-en {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(0.9rem, 3vw, 1.5rem);
+  font-weight: 400;
+  color: rgba(212,168,67,0.65);
+  letter-spacing: 0.45em;
+  margin-top: -0.4rem;
+  margin-bottom: clamp(0.6rem, 2vw, 1.2rem);
+}
+
+.hero-tagline {
+  font-size: clamp(0.72rem, 2.5vw, 1.1rem);
+  color: var(--parchment);
+  letter-spacing: 0.3em;
+  margin-bottom: 0.5rem;
+}
+
+.hero-date {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(0.85rem, 3vw, 1.3rem);
+  color: var(--gold);
+  margin-top: clamp(0.8rem, 3vw, 1.5rem);
+  letter-spacing: 0.15em;
+}
+
+.hero-cta {
+  display: inline-block;
+  margin-top: clamp(1rem, 3.5vw, 2rem);
+  padding: clamp(0.6rem, 2vw, 0.9rem) clamp(1.2rem, 4vw, 2.5rem);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  text-decoration: none;
+  font-family: 'Noto Serif TC', serif;
+  font-size: clamp(0.78rem, 2.2vw, 1rem);
+  letter-spacing: 0.2em;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+  z-index: -1;
+}
+
+.hero-cta:hover { color: var(--deep-purple); }
+.hero-cta:hover::before { transform: scaleX(1); }
+
+/* ========== SECTIONS ========== */
+section {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(3rem, 8vw, 5rem) clamp(1rem, 4vw, 2rem);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: clamp(1.5rem, 5vw, 3rem);
+}
+
+.section-header h2 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.25rem, 5vw, 2.4rem);
+  color: var(--gold-light);
+  letter-spacing: 0.12em;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 25px rgba(212,168,67,0.25), 0 0 50px rgba(212,168,67,0.1), 0 2px 4px rgba(0,0,0,0.4);
+  position: relative;
+  display: inline-block;
+}
+
+.section-header h2::before,
+.section-header h2::after {
+  content: '✦';
+  display: inline-block;
+  color: rgba(212,168,67,0.5);
+  font-size: clamp(0.6rem, 1.8vw, 1rem);
+  vertical-align: middle;
+  margin: 0 clamp(0.4rem, 1.5vw, 1.2rem);
+  transform: translateY(-3px);
+}
+
+.section-header p {
+  color: rgba(245,230,200,0.6);
+  font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+  letter-spacing: 0.1em;
+}
+
+.gold-rule {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 1rem auto;
+}
+
+/* ========== ABOUT / INFO SECTION ========== */
+#about { padding-top: 7rem; }
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.info-card {
+  background: linear-gradient(160deg, rgba(60,38,100,0.45), rgba(35,20,65,0.6));
+  border: 1px solid rgba(212,168,67,0.22);
+  padding: 2.2rem 2rem;
+  position: relative;
+  transition: all 0.4s ease;
+  box-shadow: inset 0 0 30px rgba(107,63,160,0.08), 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.info-card:hover {
+  border-color: rgba(212,168,67,0.55);
+  transform: translateY(-4px);
+  box-shadow: inset 0 0 40px rgba(212,168,67,0.06), 0 14px 36px rgba(0,0,0,0.45), 0 0 30px rgba(212,168,67,0.12);
+}
+
+.info-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold-dark) 15%, var(--gold-light) 50%, var(--gold-dark) 85%, transparent);
+}
+
+/* Ornate corner flourishes */
+.info-card::after {
+  content: '';
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 18px; height: 18px;
+  border-top: 1px solid rgba(212,168,67,0.4);
+  border-right: 1px solid rgba(212,168,67,0.4);
+  pointer-events: none;
+}
+
+.info-card .card-icon { font-size: clamp(1.4rem, 4vw, 2rem); margin-bottom: 0.8rem; }
+
+.info-card h3 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(0.82rem, 2.5vw, 1.1rem);
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.6rem;
+}
+
+.info-card p {
+  font-size: clamp(0.78rem, 2.2vw, 0.95rem);
+  line-height: 1.75;
+  color: var(--parchment);
+}
+
+/* ========== EVIDENCE BOARD ========== */
+#concept { padding-top: 7rem; }
+
+.evidence-board {
+  background: linear-gradient(135deg, rgba(60,40,20,0.35) 0%, rgba(40,25,15,0.4) 100%);
+  border: 2px solid rgba(212,168,67,0.2);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  position: relative;
+  margin-top: 2rem;
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.35), 0 12px 40px rgba(0,0,0,0.4), 0 0 40px rgba(107,63,160,0.08);
+  background-image:
+    linear-gradient(135deg, rgba(60,40,20,0.35) 0%, rgba(40,25,15,0.4) 100%),
+    repeating-linear-gradient(45deg, transparent 0 8px, rgba(212,168,67,0.015) 8px 9px);
+}
+
+.evidence-board::before {
+  content: '🔍 CASE FILE: 謎境';
+  position: absolute;
+  top: -14px;
+  left: 2rem;
+  background: var(--deep-purple);
+  padding: 0 1rem;
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+}
+
+.evidence-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.evidence-note {
+  background: rgba(245,230,200,0.05);
+  border-left: 3px solid var(--gold-dark);
+  padding: clamp(0.9rem, 3vw, 1.5rem);
+  font-size: clamp(0.78rem, 2.2vw, 0.95rem);
+  line-height: clamp(1.6, 0.2vw + 1.55, 1.9);
+}
+
+.evidence-note strong { color: var(--gold); }
+
+.clue-tag {
+  display: inline-block;
+  background: rgba(139,26,26,0.3);
+  border: 1px solid rgba(139,26,26,0.5);
+  color: #e0a0a0;
+  padding: clamp(0.15rem, 0.5vw, 0.2rem) clamp(0.45rem, 1.5vw, 0.7rem);
+  font-size: clamp(0.68rem, 2vw, 0.8rem);
+  margin: 0.25rem 0.2rem;
+  letter-spacing: 0.04em;
+}
+
+/* ========== NEWSPAPER CLIPPING ========== */
+.newspaper-clip {
+  background: var(--parchment);
+  color: var(--ink);
+  padding: clamp(1.2rem, 4vw, 2.5rem);
+  max-width: min(580px, 92vw);
+  margin: 1.5rem auto;
+  transform: rotate(-1deg);
+  box-shadow: 4px 4px 15px rgba(0,0,0,0.4);
+  position: relative;
+}
+
+.newspaper-clip::before {
+  content: '';
+  position: absolute;
+  top: 8px; left: 8px;
+  width: 20px; height: 20px;
+  background: var(--blood-red);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+}
+
+.newspaper-clip h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1rem, 3.5vw, 1.4rem);
+  text-align: center;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.newspaper-clip p {
+  font-size: clamp(0.78rem, 2.2vw, 0.95rem);
+  line-height: 1.8;
+  color: #333;
+  text-align: justify;
+}
+
+/* ========== MEMBERS ========== */
+#members { padding-top: 7rem; }
+
+.members-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.member-badge {
+  background: linear-gradient(160deg, rgba(60,38,100,0.55), rgba(35,20,65,0.55));
+  border: 1px solid rgba(212,168,67,0.28);
+  padding: clamp(0.4rem, 1.5vw, 0.65rem) clamp(0.8rem, 3vw, 1.5rem);
+  font-size: clamp(0.78rem, 2.2vw, 0.95rem);
+  color: var(--parchment);
+  transition: all 0.4s ease;
+  position: relative;
+  letter-spacing: 0.05em;
+  box-shadow: inset 0 0 12px rgba(107,63,160,0.1);
+}
+
+.member-badge::before,
+.member-badge::after {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+  border-color: rgba(212,168,67,0.4);
+  border-style: solid;
+  transition: all 0.4s ease;
+}
+.member-badge::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+.member-badge::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+
+.member-badge:hover {
+  border-color: var(--gold);
+  background: linear-gradient(160deg, rgba(80,55,130,0.7), rgba(45,27,78,0.7));
+  transform: translateY(-3px);
+  box-shadow: inset 0 0 18px rgba(212,168,67,0.1), 0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(212,168,67,0.15);
+  color: var(--gold-light);
+}
+.member-badge:hover::before,
+.member-badge:hover::after {
+  border-color: var(--gold-light);
+  width: 12px; height: 12px;
+}
+
+.mentor-label {
+  display: block;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--gold);
+  letter-spacing: 0.3em;
+  font-family: 'Cinzel', serif;
+}
+
+/* ========== SCHEDULE ========== */
+#schedule { padding-top: 7rem; }
+
+.schedule-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-top: 2rem;
+  border: 1px solid rgba(212,168,67,0.25);
+  background: linear-gradient(180deg, rgba(45,27,78,0.3), rgba(26,10,46,0.5));
+  box-shadow: inset 0 0 40px rgba(107,63,160,0.08), 0 10px 30px rgba(0,0,0,0.35);
+  position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.schedule-wrapper::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+.schedule-wrapper::before,
+.schedule-wrapper::after {
+  content: '';
+  position: absolute;
+  width: 22px; height: 22px;
+  border-color: var(--gold);
+  border-style: solid;
+  pointer-events: none;
+}
+.schedule-wrapper::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.schedule-wrapper::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.schedule-table thead {
+  background: linear-gradient(135deg, rgba(107,63,160,0.3), rgba(45,27,78,0.5));
+}
+
+.schedule-table th {
+  padding: 1rem 0.7rem;
+  text-align: left;
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-bottom: 2px solid var(--gold-dark);
+  white-space: nowrap;
+}
+
+.schedule-table td {
+  padding: 0.7rem;
+  border-bottom: 1px solid rgba(212,168,67,0.1);
+  vertical-align: middle;
+}
+
+.schedule-table tbody tr { transition: background 0.2s; }
+.schedule-table tbody tr:hover { background: rgba(107,63,160,0.15); }
+
+.venue-tag {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.venue-main  { background: rgba(76,175,80,0.25); color: #81c784; border: 1px solid rgba(76,175,80,0.4); }
+.venue-front { background: rgba(244,67,54,0.2); color: #ef9a9a; border: 1px solid rgba(244,67,54,0.35); }
+.venue-back  { background: rgba(33,150,243,0.2); color: #90caf9; border: 1px solid rgba(33,150,243,0.35); }
+.venue-mid   { background: rgba(156,39,176,0.2); color: #ce93d8; border: 1px solid rgba(156,39,176,0.35); }
+
+.break-row { background: rgba(212,168,67,0.05) !important; font-style: italic; }
+.break-row td { color: rgba(245,230,200,0.5); }
+
+.type-icon { margin-right: 0.3rem; }
+
+.member-cell {
+  font-size: 0.75rem;
+  color: rgba(245,230,200,0.65);
+  line-height: 1.6;
+  max-width: 220px;
+}
+
+.member-cell .leader {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.filter-btn {
+  background: rgba(45,27,78,0.5);
+  border: 1px solid rgba(212,168,67,0.25);
+  color: var(--parchment);
+  padding: 0.4rem 1rem;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 0.05em;
+}
+
+.filter-btn:hover, .filter-btn.active {
+  background: rgba(212,168,67,0.2);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ========== VENUE MAP ========== */
+#venue-map { padding-top: 7rem; }
+
+.floorplan-container {
+  max-width: 700px;
+  margin: 2rem auto 0;
+  border: 1px solid rgba(212,168,67,0.28);
+  padding: 1.8rem;
+  background: linear-gradient(160deg, rgba(60,38,100,0.4), rgba(35,20,65,0.5));
+  box-shadow: inset 0 0 50px rgba(107,63,160,0.08), 0 15px 40px rgba(0,0,0,0.35);
+  position: relative;
+}
+
+.floorplan-container::before,
+.floorplan-container::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  border-color: var(--gold);
+  border-style: solid;
+  pointer-events: none;
+}
+.floorplan-container::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.floorplan-container::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+.floorplan-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.floorplan-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--parchment);
+}
+
+.legend-color {
+  width: 16px; height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ========== REGISTRATION ========== */
+#register { padding-top: 7rem; padding-bottom: 6rem; }
+
+.register-container {
+  max-width: 600px;
+  margin: 2rem auto 0;
+  background: linear-gradient(160deg, rgba(60,38,100,0.45), rgba(35,20,65,0.55));
+  border: 1px solid rgba(212,168,67,0.3);
+  padding: 3rem;
+  position: relative;
+  box-shadow: inset 0 0 60px rgba(107,63,160,0.1), 0 18px 50px rgba(0,0,0,0.4), 0 0 40px rgba(212,168,67,0.06);
+}
+
+.register-container::before,
+.register-container::after {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  border-color: var(--gold);
+  border-style: solid;
+}
+
+.register-container::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.register-container::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+.form-group { margin-bottom: 1.5rem; }
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--gold);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+}
+
+.form-group label .required { color: var(--blood-red); margin-left: 0.2rem; }
+
+.form-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: rgba(26,10,46,0.6);
+  border: 1px solid rgba(212,168,67,0.2);
+  color: var(--cream);
+  font-family: 'Noto Serif TC', serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.form-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 15px rgba(212,168,67,0.1);
+}
+
+.form-input::placeholder { color: rgba(245,230,200,0.3); }
+
+.radio-group { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; }
+
+.radio-option { position: relative; cursor: pointer; }
+.radio-option input { position: absolute; opacity: 0; cursor: pointer; }
+
+.radio-label {
+  display: inline-block;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid rgba(212,168,67,0.25);
+  color: var(--parchment);
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.radio-option input:checked + .radio-label {
+  background: rgba(212,168,67,0.2);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.radio-option:hover .radio-label { border-color: rgba(212,168,67,0.5); }
+
+.submit-btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+  border: none;
+  color: var(--deep-purple);
+  font-family: 'Noto Serif TC', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition: all 0.4s;
+  margin-top: 1rem;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(212,168,67,0.3);
+}
+
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.success-msg { display: none; text-align: center; padding: 2rem; }
+
+.success-msg h3 {
+  color: var(--gold-light);
+  font-family: 'Cinzel', serif;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.success-msg p { color: var(--parchment); line-height: 2; }
+.success-msg .checkmark { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+/* ========== FOOTER ========== */
+footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid rgba(212,168,67,0.15);
+  color: rgba(245,230,200,0.4);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+}
+
+/* ========== SCROLL ANIMATIONS ========== */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ========== MAP ========== */
+.map-wrapper {
+  margin-top: 1.5rem;
+  border: 1px solid rgba(212,168,67,0.2);
+  overflow: hidden;
+}
+
+.map-wrapper iframe {
+  width: 100%;
+  height: 300px;
+  border: 0;
+  filter: grayscale(0.4) contrast(1.1);
+  opacity: 0.85;
+  transition: opacity 0.3s, filter 0.3s;
+}
+
+.map-wrapper:hover iframe { filter: grayscale(0) contrast(1); opacity: 1; }
+
+/* ========== PARTICLES & SHIMMER ========== */
+.particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  animation: drift linear infinite;
+}
+
+/* Variety of particle sizes and glow */
+.particle.gold-sm {
+  width: 2px; height: 2px;
+  background: rgba(212,168,67,0.4);
+  box-shadow: 0 0 4px rgba(212,168,67,0.2);
+}
+.particle.gold-md {
+  width: 3px; height: 3px;
+  background: rgba(240,208,120,0.5);
+  box-shadow: 0 0 8px rgba(240,208,120,0.3);
+}
+.particle.gold-lg {
+  width: 4px; height: 4px;
+  background: rgba(240,208,120,0.35);
+  box-shadow: 0 0 14px rgba(212,168,67,0.25), 0 0 4px rgba(255,255,255,0.15);
+}
+.particle.purple-sm {
+  width: 2px; height: 2px;
+  background: rgba(160,120,220,0.3);
+  box-shadow: 0 0 6px rgba(160,120,220,0.15);
+}
+.particle.star {
+  width: 1px; height: 1px;
+  background: rgba(255,255,255,0.6);
+  box-shadow: 0 0 3px rgba(255,255,255,0.4);
+  animation: twinkle ease-in-out infinite, drift linear infinite;
+}
+
+@keyframes drift {
+  0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { transform: translateY(-10vh) translateX(30px); opacity: 0; }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Gold shimmer line that sweeps across sections */
+@keyframes shimmer-sweep {
+  0% { left: -30%; opacity: 0; }
+  40% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+
+.section-header .gold-rule::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: 30px; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+  animation: shimmer-sweep 4s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+.gold-rule { position: relative; overflow: hidden; }
+
+/* ========== BACK TO TOP ========== */
+.back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 45px; height: 45px;
+  background: rgba(45,27,78,0.8);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s;
+  z-index: 999;
+  text-decoration: none;
+}
+
+.back-to-top.show { opacity: 1; pointer-events: auto; }
+.back-to-top:hover { background: var(--gold); color: var(--deep-purple); }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .nav-links.open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: rgba(26,10,46,0.98);
+    padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(212,168,67,0.2);
+  }
+  .hamburger { display: flex; }
+  .evidence-content { grid-template-columns: 1fr; }
+  .register-container { padding: 2rem 1.5rem; }
+  .info-grid { grid-template-columns: 1fr; }
+  .schedule-table { font-size: 0.75rem; }
+  .schedule-table th, .schedule-table td { padding: 0.5rem 0.4rem; }
+  .member-cell { font-size: 0.7rem; max-width: 150px; }
+  .envelope-container { transform: scale(0.8); }
+}
+
+@media (max-width: 480px) {
+  .section-header h2 { font-size: 1.6rem; }
+  .radio-group { flex-direction: column; }
+  .envelope-container { transform: scale(0.65); }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== ENVELOPE INTRO ========== -->
+<div id="envelope-intro">
+  <div class="envelope-hint">YOU ARE CORDIALLY INVITED</div>
+  <div class="envelope-wrapper" id="envelopeWrapper">
+    <div class="envelope-body"></div>
+    <div class="letter">
+      <div class="letter-text">
+        YOU ARE INVITED TO
+        <span class="big">謎 境</span>
+        2026 . 04 . 25
+      </div>
+    </div>
+    <div class="envelope-flap"></div>
+    <div class="wax-seal">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- ── 顏色：明亮的火漆紅，不再暗沉 ── -->
+          <radialGradient id="waxMatte" cx="44%" cy="40%" r="68%">
+            <stop offset="0%"   stop-color="#e03535"/>
+            <stop offset="45%"  stop-color="#c52222"/>
+            <stop offset="78%"  stop-color="#9e1618"/>
+            <stop offset="100%" stop-color="#7a1014"/>
+          </radialGradient>
+
+          <radialGradient id="waxFlat" cx="44%" cy="40%" r="70%">
+            <stop offset="0%"   stop-color="#e83c3c"/>
+            <stop offset="55%"  stop-color="#c82828"/>
+            <stop offset="100%" stop-color="#a01c1e"/>
+          </radialGradient>
+
+          <!-- 霧面絲光：蠟舌弧面受光的柔和亮邊（非玻璃光澤，低不透明度） -->
+          <linearGradient id="matteSheenTL" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.18"/>
+            <stop offset="35%"  stop-color="#ffffff" stop-opacity="0.07"/>
+            <stop offset="70%"  stop-color="#ffffff" stop-opacity="0.02"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </linearGradient>
+
+          <!-- 底部反光（暖色，像光從桌面反射上來） -->
+          <linearGradient id="matteSheenBR" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#000" stop-opacity="0.08"/>
+            <stop offset="65%"  stop-color="#000" stop-opacity="0.02"/>
+            <stop offset="100%" stop-color="#ff8060" stop-opacity="0.08"/>
+          </linearGradient>
+
+          <!-- 蠟舌凸起局部霧面高光（橢圓柔光） -->
+          <radialGradient id="bumpSheen" cx="40%" cy="35%" r="60%">
+            <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.22"/>
+            <stop offset="55%"  stop-color="#ffffff" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+
+          <!-- 霧面紋理 noise（clipped） -->
+          <filter id="waxTex" x="0%" y="0%" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="3" seed="11" result="n"/>
+            <feColorMatrix in="n" type="matrix"
+              values="0 0 0 0 0
+                      0 0 0 0 0
+                      0 0 0 0 0
+                      0 0 0 0.30 0" result="nc"/>
+            <feComposite in="nc" in2="SourceGraphic" operator="in"/>
+          </filter>
+
+          <filter id="flangeTex" x="0%" y="0%" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="2.0" numOctaves="2" seed="7" result="n"/>
+            <feColorMatrix in="n" type="matrix"
+              values="0 0 0 0 0
+                      0 0 0 0 0
+                      0 0 0 0 0
+                      0 0 0 0.38 0" result="nc"/>
+            <feComposite in="nc" in2="SourceGraphic" operator="in"/>
+          </filter>
+
+          <!-- 內圓凹陷邊緣陰影 -->
+          <radialGradient id="cavityRim" cx="50%" cy="50%" r="50%">
+            <stop offset="78%" stop-color="#000" stop-opacity="0"/>
+            <stop offset="93%" stop-color="#000" stop-opacity="0.32"/>
+            <stop offset="100%" stop-color="#000" stop-opacity="0.60"/>
+          </radialGradient>
+
+          <!-- 投影 -->
+          <filter id="dropOnPaper" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+            <feOffset dx="1" dy="3" result="o"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.50"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+
+          <!-- 團體徽章：5 人風車 -->
+          <g id="figure">
+            <path d="M0,-10 L9.5,-24 L-9.5,-24 Z"/>
+            <circle cx="0" cy="-27" r="3.2"/>
+          </g>
+          <g id="pinwheel">
+            <circle r="32" fill="none" stroke-width="2.4"/>
+            <use href="#figure" transform="rotate(0)"/>
+            <use href="#figure" transform="rotate(72)"/>
+            <use href="#figure" transform="rotate(144)"/>
+            <use href="#figure" transform="rotate(216)"/>
+            <use href="#figure" transform="rotate(288)"/>
+          </g>
+
+          <clipPath id="insideClip">
+            <circle cx="100" cy="100" r="62"/>
+          </clipPath>
+        </defs>
+
+        <g filter="url(#dropOnPaper)">
+
+          <!-- ══════════════════════════════════════
+               外層：不規則蠟舌，更多凸起
+          ══════════════════════════════════════ -->
+          <!-- 主體蠟舌（比之前多更多不規則凸起） -->
+          <path d="
+            M100,14
+            C106,12 116,10 126,14
+            C136,18 148,14 158,24
+            C167,32 174,40 178,52
+            C186,56 192,68 188,80
+            C190,90 190,104 184,114
+            C188,124 184,138 174,148
+            C166,158 158,162 148,168
+            C140,178 126,184 112,184
+            C102,188 90,188 78,184
+            C66,184 52,178 42,170
+            C32,164 22,156 16,144
+            C10,134 10,120 14,108
+            C8,96 10,80 18,70
+            C14,58 18,44 28,36
+            C36,26 46,18 58,14
+            C68,10 80,11 90,12
+            C94,12 97,13 100,14 Z"
+            fill="url(#waxMatte)"/>
+
+          <!-- 蠟舌 noise 紋理 -->
+          <path d="
+            M100,14
+            C106,12 116,10 126,14
+            C136,18 148,14 158,24
+            C167,32 174,40 178,52
+            C186,56 192,68 188,80
+            C190,90 190,104 184,114
+            C188,124 184,138 174,148
+            C166,158 158,162 148,168
+            C140,178 126,184 112,184
+            C102,188 90,188 78,184
+            C66,184 52,178 42,170
+            C32,164 22,156 16,144
+            C10,134 10,120 14,108
+            C8,96 10,80 18,70
+            C14,58 18,44 28,36
+            C36,26 46,18 58,14
+            C68,10 80,11 90,12
+            C94,12 97,13 100,14 Z"
+            fill="#000" filter="url(#flangeTex)" opacity="0.50"/>
+
+          <!-- 霧面絲光 — 左上弧面受光（最重要的質感層） -->
+          <path d="
+            M100,14
+            C106,12 116,10 126,14
+            C136,18 148,14 158,24
+            C167,32 174,40 178,52
+            C186,56 192,68 188,80
+            C190,90 190,104 184,114
+            C188,124 184,138 174,148
+            C166,158 158,162 148,168
+            C140,178 126,184 112,184
+            C102,188 90,188 78,184
+            C66,184 52,178 42,170
+            C32,164 22,156 16,144
+            C10,134 10,120 14,108
+            C8,96 10,80 18,70
+            C14,58 18,44 28,36
+            C36,26 46,18 58,14
+            C68,10 80,11 90,12
+            C94,12 97,13 100,14 Z"
+            fill="url(#matteSheenTL)"/>
+
+          <!-- 霧面絲光 — 整體方向光（上亮下暗，非常淡） -->
+          <path d="
+            M100,14
+            C106,12 116,10 126,14
+            C136,18 148,14 158,24
+            C167,32 174,40 178,52
+            C186,56 192,68 188,80
+            C190,90 190,104 184,114
+            C188,124 184,138 174,148
+            C166,158 158,162 148,168
+            C140,178 126,184 112,184
+            C102,188 90,188 78,184
+            C66,184 52,178 42,170
+            C32,164 22,156 16,144
+            C10,134 10,120 14,108
+            C8,96 10,80 18,70
+            C14,58 18,44 28,36
+            C36,26 46,18 58,14
+            C68,10 80,11 90,12
+            C94,12 97,13 100,14 Z"
+            fill="url(#matteSheenBR)"/>
+
+
+
+          <!-- ══ 凹陷分界圈 ══ -->
+          <circle cx="100" cy="100" r="66" fill="none" stroke="#5a0808" stroke-width="3.5" opacity="0.50"/>
+          <circle cx="100" cy="100" r="64" fill="none" stroke="#320404" stroke-width="1.5" opacity="0.90"/>
+
+          <!-- ══════════════════════════════════════
+               內圈：被壓平的區域（略深、霧面）
+          ══════════════════════════════════════ -->
+          <circle cx="100" cy="100" r="63" fill="url(#waxFlat)"/>
+          <circle cx="100" cy="100" r="63" fill="#000" filter="url(#waxTex)" opacity="0.38"/>
+          <!-- 邊緣陰影 -->
+          <circle cx="100" cy="100" r="63" fill="url(#cavityRim)"/>
+          <!-- 內圈也加一層極淡的霧面絲光 -->
+          <circle cx="100" cy="100" r="63" fill="url(#matteSheenTL)" opacity="0.55"/>
+
+          <!-- ══════════════════════════════════════
+               浮雕徽章
+          ══════════════════════════════════════ -->
+          <g clip-path="url(#insideClip)">
+            <!-- 底部暗影（壓入感） -->
+            <g transform="translate(101.6,102.4)" fill="#5a0c0e" stroke="#5a0c0e" opacity="0.90">
+              <use href="#pinwheel"/>
+            </g>
+            <!-- 霧面亮邊（左上，非常淡） -->
+            <g transform="translate(98.8,98.6)" fill="#e04040" stroke="#e04040" opacity="0.45">
+              <use href="#pinwheel"/>
+            </g>
+            <!-- 主色面 -->
+            <g transform="translate(100,100)" fill="#c22424" stroke="#c22424">
+              <use href="#pinwheel"/>
+            </g>
+            <!-- 霧面紋理 -->
+            <g transform="translate(100,100)" fill="#000" filter="url(#waxTex)" opacity="0.25">
+              <use href="#pinwheel"/>
+            </g>
+          </g>
+
+          <!-- 蠟面細小雜質 -->
+          <circle cx="58"  cy="52"  r="0.8" fill="#500808" opacity="0.6"/>
+          <circle cx="152" cy="58"  r="0.7" fill="#500808" opacity="0.6"/>
+          <circle cx="44"  cy="124" r="0.9" fill="#500808" opacity="0.55"/>
+          <circle cx="162" cy="148" r="0.6" fill="#500808" opacity="0.55"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="click-hint">— 點擊信封開啟 —</div>
+</div>
+
+<!-- ========== MAIN SITE ========== -->
+<div id="main-site">
+
+<div class="particles" id="particles"></div>
+
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-logo">謎 境</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#about">活動資訊</a></li>
+      <li><a href="#concept">活動介紹</a></li>
+      <li><a href="#members">成員</a></li>
+      <li><a href="#register">報名</a></li>
+    </ul>
+    <button class="hamburger" id="hamburger" aria-label="選單">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="thread-lines">
+    <div class="thread"></div><div class="thread"></div><div class="thread"></div><div class="thread"></div>
+    <div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div>
+  </div>
+  <div class="hero-frame">
+    <div class="hero-subtitle-top">Puzzle &amp; Logic Game Expo</div>
+    <div class="hero-title-cn">謎 境</div>
+    <div class="hero-title-en">ENIGMA REALM</div>
+    <div class="hero-tagline">數理邏輯 ── 遊戲博覽會</div>
+    <div class="ornament-line" style="margin:1rem 0;"></div>
+    <div class="hero-date">2026 . 04 . 25（六）</div>
+    <a href="#about" class="hero-cta">立即查看 →</a>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-header reveal">
+    <h2>EVENT BRIEFING</h2>
+    <div class="gold-rule"></div>
+    <p>活動資訊</p>
+  </div>
+  <div class="info-grid">
+    <div class="info-card reveal">
+      <div class="card-icon">📅</div>
+      <h3>Date</h3>
+      <p>2026 年 4 月 25 日（六）<br>09:00 — 17:00</p>
+    </div>
+    <div class="info-card reveal">
+      <div class="card-icon">📍</div>
+      <h3>Location</h3>
+      <p>220 新北市板橋區<br>中正路213號3樓</p>
+    </div>
+    <div class="info-card reveal">
+      <div class="card-icon">🎲</div>
+      <h3>Theme</h3>
+      <p>邏輯推理遊戲博覽會</p>
+    </div>
+  </div>
+  <div class="map-wrapper reveal" style="max-width:800px; margin:2rem auto 0;">
+    <iframe src="https://maps.google.com/maps?q=%E5%8F%AF%E8%83%BD%E8%87%AA%E5%AD%B8%E5%9C%98-%E5%8F%B0%E5%8C%97&t=&z=16&ie=UTF8&iwloc=&output=embed" allowfullscreen loading="lazy"></iframe>
+  </div>
+</section>
+
+<!-- CONCEPT -->
+<section id="concept">
+  <div class="section-header reveal">
+    <h2>THE CHRONICLE</h2>
+    <div class="gold-rule"></div>
+    <p>活動介紹</p>
+  </div>
+  <div class="newspaper-clip reveal">
+    <h4>THE ENIGMA GAZETTE</h4>
+    <p>一場結合數理邏輯與解謎冒險的沉浸式遊戲博覽會即將登場。</p>
+    <p style="margin-top:0.8rem;">「謎境」邀請你走入精心設計的謎題世界，挑戰密室桌遊、邏輯推理遊戲與解謎專案，在遊戲中探索數學與邏輯的奧秘。</p>
+    <p style="margin-top:0.8rem;">同時更有精彩的舞團、樂團與劇團演出穿插其中，讓你在推理與藝術之間穿梭。</p>
+  </div>
+  <div class="evidence-board reveal">
+    <div class="evidence-content">
+      <div class="evidence-note">
+        <strong>案件摘要</strong><br>
+        這不是一般的成果發表會。<br>
+        這是一場遊戲博覽會——<br>
+        你將親身參與解謎、推理與邏輯挑戰，<br>
+        在每個關卡中解鎖新的線索。
+      </div>
+      <div class="evidence-note">
+        <strong>關鍵線索</strong><br>
+        <span class="clue-tag">個人解謎</span>
+        <span class="clue-tag">密室桌遊</span>
+        <span class="clue-tag">文學課解謎</span>
+        <span class="clue-tag">數理邏輯遊戲</span>
+        <span class="clue-tag">舞團演出</span>
+        <span class="clue-tag">樂團演出</span>
+        <span class="clue-tag">劇團演出</span>
+        <span class="clue-tag">主題曲 &amp; MV</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MEMBERS -->
+<section id="members">
+  <div class="section-header reveal">
+    <h2>THE ROSTER</h2>
+    <div class="gold-rule"></div>
+    <p>成員與導師</p>
+  </div>
+  <div class="reveal">
+    <div class="mentor-label">MENTOR</div>
+    <div class="members-grid" style="margin-bottom:2rem;">
+      <div class="member-badge">趙介亭</div>
+    </div>
+    <div class="mentor-label">MEMBERS</div>
+    <div class="members-grid">
+      <div class="member-badge">黃璽恩</div>
+      <div class="member-badge">劉哲愷</div>
+      <div class="member-badge">權湘庭</div>
+      <div class="member-badge">郭妍希</div>
+      <div class="member-badge">林恩禧</div>
+      <div class="member-badge">姜佳妮</div>
+      <div class="member-badge">王鼎翔</div>
+      <div class="member-badge">莊仲諺</div>
+      <div class="member-badge">陳芯妍</div>
+      <div class="member-badge">謝宇安</div>
+      <div class="member-badge">趙世宸</div>
+      <div class="member-badge">李宇涵</div>
+    </div>
+  </div>
+</section>
+
+<!-- REGISTRATION -->
+<section id="register">
+  <div class="section-header reveal">
+    <h2>YOUR INVITATION</h2>
+    <div class="gold-rule"></div>
+    <p>報名申請</p>
+  </div>
+  <div class="register-container reveal">
+    <form id="registerForm">
+      <div class="form-group">
+        <label>姓名 <span class="required">*</span></label>
+        <input type="text" class="form-input" name="name" placeholder="請輸入您的姓名" required>
+      </div>
+      <div class="form-group">
+        <label>人數 <span class="required">*</span></label>
+        <input type="number" class="form-input" name="count" placeholder="請輸入參加人數" min="1" max="50" required>
+      </div>
+      <div class="form-group">
+        <label>身份 <span class="required">*</span></label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="identity" value="學生" required>
+            <span class="radio-label">學生</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="identity" value="學生家長">
+            <span class="radio-label">學生家長</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="identity" value="其他參與者">
+            <span class="radio-label">其他參與者</span>
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">提交報名</button>
+    </form>
+    <div class="success-msg" id="successMsg">
+      <span class="checkmark">✦</span>
+      <h3>報名成功！</h3>
+      <p>感謝您的報名，我們已收到您的資料。<br>期待在「謎境」與您相見！</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="ornament-line" style="margin-bottom:1.5rem;"></div>
+  <p>謎境 — 數理邏輯遊戲博覽會 &copy; 2026</p>
+  <p style="margin-top:0.5rem; font-size:0.75rem;">Every puzzle has an answer. Will you find yours?</p>
+</footer>
+
+<a href="#hero" class="back-to-top" id="backToTop" title="回到頂部">↑</a>
+
+</div><!-- end main-site -->
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpxiqvOQNDLlBZqnU3OOF4YAz3Q4Hi3WOUBfJPlPrrK7QLKwz9a_pfFTXIfDGi35xf/exec';
+
+// ===== ENVELOPE ANIMATION =====
+(function() {
+  var intro = document.getElementById('envelope-intro');
+  var wrapper = document.getElementById('envelopeWrapper');
+  var mainSite = document.getElementById('main-site');
+  var opened = false;
+
+  intro.addEventListener('click', function() {
+    if (!opened) {
+      opened = true;
+      // Phase 1: open flap (0ms)
+      wrapper.classList.add('phase1');
+      // Phase 2: letter rises out (after flap fully open, ~800ms)
+      setTimeout(function() {
+        wrapper.classList.add('phase2');
+      }, 750);
+      // Fade out intro and show main site
+      setTimeout(function() {
+        intro.classList.add('fade-out');
+        setTimeout(function() {
+          intro.style.display = 'none';
+          mainSite.classList.add('show');
+        }, 800);
+      }, 1800);
+    }
+  });
+})();
+
+// ===== FORM SUBMISSION =====
+var form = document.getElementById('registerForm');
+var submitBtn = document.getElementById('submitBtn');
+var successMsg = document.getElementById('successMsg');
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  var name = form.name.value.trim();
+  var count = form.count.value;
+  var identity = form.identity.value;
+  if (!name || !count || !identity) { alert('請填寫所有必填欄位'); return; }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '提交中...';
+
+  var params = '?name=' + encodeURIComponent(name)
+    + '&count=' + encodeURIComponent(count)
+    + '&identity=' + encodeURIComponent(identity);
+
+  var img = new Image();
+  img.onload = img.onerror = function() {
+    form.style.display = 'none';
+    successMsg.style.display = 'block';
+  };
+  img.src = APPS_SCRIPT_URL + params;
+
+  setTimeout(function() {
+    form.style.display = 'none';
+    successMsg.style.display = 'block';
+  }, 1500);
+});
+
+// ===== PARTICLES =====
+(function() {
+  var c = document.getElementById('particles');
+  var variants = ['gold-sm','gold-md','gold-lg','purple-sm','star','star','gold-sm','gold-md'];
+  for (var i = 0; i < 70; i++) {
+    var p = document.createElement('div');
+    var v = variants[Math.floor(Math.random() * variants.length)];
+    p.className = 'particle ' + v;
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (14 + Math.random() * 24) + 's';
+    p.style.animationDelay = (Math.random() * 20) + 's';
+    if (v === 'star') {
+      p.style.animationDuration = (2 + Math.random() * 3) + 's, ' + (18 + Math.random() * 20) + 's';
+      p.style.animationDelay = (Math.random() * 3) + 's, ' + (Math.random() * 20) + 's';
+    }
+    c.appendChild(p);
+  }
+})();
+
+// ===== SCROLL ANIMATIONS =====
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+
+// ===== NAVBAR =====
+var navbar = document.getElementById('navbar');
+window.addEventListener('scroll', function() {
+  navbar.classList.toggle('scrolled', window.scrollY > 50);
+  document.getElementById('backToTop').classList.toggle('show', window.scrollY > 600);
+});
+
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('navLinks').classList.toggle('open');
+});
+
+document.querySelectorAll('.nav-links a').forEach(function(link) {
+  link.addEventListener('click', function() {
+    document.getElementById('navLinks').classList.remove('open');
+  });
+});
+
+// ===== SCHEDULE FILTER =====
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    this.classList.add('active');
+    var filter = this.dataset.filter;
+    document.querySelectorAll('#scheduleTable tbody tr').forEach(function(row) {
+      if (filter === 'all') { row.style.display = ''; }
+      else {
+        var type = row.dataset.type;
+        row.style.display = (type === filter || type === '休息' || type === '其他') ? '' : 'none';
+      }
+    });
+  });
+});
+</script>
+
+</body>
+</html>
