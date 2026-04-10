@@ -1581,7 +1581,7 @@ footer {
         <label>身份 <span class="required">*</span></label>
         <div class="radio-group">
           <label class="radio-option">
-            <input type="radio" name="identity" value="學生" required>
+            <input type="radio" name="identity" value="學生">
             <span class="radio-label">學生</span>
           </label>
           <label class="radio-option">
@@ -1597,7 +1597,7 @@ footer {
       <div class="form-group" id="relationGroup" style="display:none;">
         <label>與學生關係 <span class="required">*</span></label>
         <span style="font-size:0.75rem; color:var(--white); opacity:0.7; display:block; margin-bottom:0.4rem;">請輸入您是「OO(學生)爸爸/媽媽/公婆...」，若非學生家屬請輸入「無關係」</span>
-        <input type="text" class="form-input" name="count" placeholder="請輸入您與學生的關係" min="1" max="50">
+        <input type="text" class="form-input" name="relation" placeholder="請輸入您與學生的關係" min="1" max="50">
       </div>
       <button type="submit" class="submit-btn" id="submitBtn">提交報名</button>
     </form>
@@ -1659,8 +1659,8 @@ var successMsg = document.getElementById('successMsg');
 form.addEventListener('submit', function(e) {
   e.preventDefault();
   var name = form.name.value.trim();
-  var count = form.count.value;
-  var identity = form.identity.value;
+  var identity = document.querySelector('input[name="identity"]:checked');
+  identity = identity ? identity.value : '';
   var relation = form.relation ? form.relation.value.trim() : '';
   var needRelation = identity && identity !== '學生';
   if (!name || !identity || (needRelation && !relation)) { alert('請填寫所有必填欄位'); return; }
@@ -1669,8 +1669,8 @@ form.addEventListener('submit', function(e) {
   submitBtn.textContent = '提交中...';
 
   var params = '?name=' + encodeURIComponent(name)
-    + '&count=' + encodeURIComponent(count)
-    + '&identity=' + encodeURIComponent(identity);
+   + '&identity=' + encodeURIComponent(identity)
+   + '&relation=' + encodeURIComponent(relation);
 
   var img = new Image();
   img.onload = img.onerror = function() {
