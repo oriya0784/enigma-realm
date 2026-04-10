@@ -288,7 +288,7 @@ nav.scrolled {
 }
 
 .nav-logo {
-  font-family: 'Cinzel', serif;
+  font-family: 'Noto Serif TC', serif;
   font-size: 1.4rem;
   font-weight: 900;
   color: var(--gold);
@@ -708,48 +708,19 @@ section {
 #members { padding-top: 7rem; }
 
 .members-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
   justify-content: center;
-  gap: 1rem;
+  gap: 1rem 2rem;
   margin-top: 2rem;
 }
 
 .member-badge {
-  background: linear-gradient(160deg, rgba(60,38,100,0.55), rgba(35,20,65,0.55));
-  border: 1px solid rgba(212,168,67,0.28);
-  padding: clamp(0.4rem, 1.5vw, 0.65rem) clamp(0.8rem, 3vw, 1.5rem);
-  font-size: clamp(0.78rem, 2.2vw, 0.95rem);
-  color: var(--parchment);
-  transition: all 0.4s ease;
-  position: relative;
-  letter-spacing: 0.05em;
-  box-shadow: inset 0 0 12px rgba(107,63,160,0.1);
-}
-
-.member-badge::before,
-.member-badge::after {
-  content: '';
-  position: absolute;
-  width: 8px; height: 8px;
-  border-color: rgba(212,168,67,0.4);
-  border-style: solid;
-  transition: all 0.4s ease;
-}
-.member-badge::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
-.member-badge::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
-
-.member-badge:hover {
-  border-color: var(--gold);
-  background: linear-gradient(160deg, rgba(80,55,130,0.7), rgba(45,27,78,0.7));
-  transform: translateY(-3px);
-  box-shadow: inset 0 0 18px rgba(212,168,67,0.1), 0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(212,168,67,0.15);
-  color: var(--gold-light);
-}
-.member-badge:hover::before,
-.member-badge:hover::after {
-  border-color: var(--gold-light);
-  width: 12px; height: 12px;
+  padding: 0.5rem 1rem;
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+  color: var(--cream);
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 8px rgba(212,168,67,0.4), 0 0 20px rgba(212,168,67,0.2);
 }
 
 .mentor-label {
@@ -1495,53 +1466,24 @@ footer {
     <div class="hero-subtitle-top">Puzzle &amp; Logic Game Expo</div>
     <div class="hero-title-cn">謎 境</div>
     <div class="hero-title-en">ENIGMA REALM</div>
-    <div class="hero-tagline">數理邏輯 ── 遊戲博覽會</div>
+    <div class="hero-tagline">邏輯解謎 ── 遊戲博覽會</div>
     <div class="ornament-line" style="margin:1rem 0;"></div>
     <div class="hero-date">2026 . 04 . 25（六）</div>
     <a href="#about" class="hero-cta">立即查看 →</a>
   </div>
 </section>
 
-<!-- ABOUT -->
-<section id="about">
-  <div class="section-header reveal">
-    <h2>EVENT BRIEFING</h2>
-    <div class="gold-rule"></div>
-    <p>活動資訊</p>
-  </div>
-  <div class="info-grid">
-    <div class="info-card reveal">
-      <div class="card-icon">📅</div>
-      <h3>Date</h3>
-      <p>2026 年 4 月 25 日（六）<br>09:00 — 17:00</p>
-    </div>
-    <div class="info-card reveal">
-      <div class="card-icon">📍</div>
-      <h3>Location</h3>
-      <p>220 新北市板橋區<br>中正路213號3樓</p>
-    </div>
-    <div class="info-card reveal">
-      <div class="card-icon">🎲</div>
-      <h3>Theme</h3>
-      <p>邏輯推理遊戲博覽會</p>
-    </div>
-  </div>
-  <div class="map-wrapper reveal" style="max-width:800px; margin:2rem auto 0;">
-    <iframe src="https://maps.google.com/maps?q=%E5%8F%AF%E8%83%BD%E8%87%AA%E5%AD%B8%E5%9C%98-%E5%8F%B0%E5%8C%97&t=&z=16&ie=UTF8&iwloc=&output=embed" allowfullscreen loading="lazy"></iframe>
-  </div>
-</section>
-
 <!-- CONCEPT -->
 <section id="concept">
   <div class="section-header reveal">
-    <h2>THE CHRONICLE</h2>
+    <h2>ACTIVITY INTRODUCTION</h2>
     <div class="gold-rule"></div>
     <p>活動介紹</p>
   </div>
   <div class="newspaper-clip reveal">
-    <h4>THE ENIGMA GAZETTE</h4>
-    <p>一場結合數理邏輯與解謎冒險的沉浸式遊戲博覽會即將登場。</p>
-    <p style="margin-top:0.8rem;">「謎境」邀請你走入精心設計的謎題世界，挑戰密室桌遊、邏輯推理遊戲與解謎專案，在遊戲中探索數學與邏輯的奧秘。</p>
+    <h4>ENIGMA REALM</h4>
+    <p>一場結合邏輯與解謎的遊戲博覽會即將登場。</p>
+    <p style="margin-top:0.8rem;">「謎境」邀請你走入精心設計的謎題世界，挑戰密室桌遊、邏輯推理遊戲與解謎，在遊戲中探索邏輯的奧秘。</p>
     <p style="margin-top:0.8rem;">同時更有精彩的舞團、樂團與劇團演出穿插其中，讓你在推理與藝術之間穿梭。</p>
   </div>
   <div class="evidence-board reveal">
@@ -1555,10 +1497,9 @@ footer {
       </div>
       <div class="evidence-note">
         <strong>關鍵線索</strong><br>
-        <span class="clue-tag">個人解謎</span>
+        <span class="clue-tag">遊戲博覽會</span>
         <span class="clue-tag">密室桌遊</span>
         <span class="clue-tag">沉浸式解謎</span>
-        <span class="clue-tag">數理邏輯遊戲</span>
         <span class="clue-tag">舞團演出</span>
         <span class="clue-tag">樂團演出</span>
         <span class="clue-tag">劇團演出</span>
@@ -1568,16 +1509,40 @@ footer {
   </div>
 </section>
 
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-header reveal">
+    <h2>EVENT INFORMATION</h2>
+    <div class="gold-rule"></div>
+    <p>活動資訊</p>
+  </div>
+  <div class="info-grid">
+    <div class="info-card reveal">
+      <div class="card-icon">📅</div>
+      <h3>Date</h3>
+      <p>2026 年 4 月 25 日（六）<br>09:00 — 17:00</p>
+    </div>
+    <div class="info-card reveal">
+      <div class="card-icon">📍</div>
+      <h3>Location</h3>
+      <p>可能自學團-台北<br>220 新北市板橋區<br>中正路213號3樓</p>
+    </div>
+  </div>
+  <div class="map-wrapper reveal" style="max-width:800px; margin:2rem auto 0;">
+    <iframe src="https://maps.google.com/maps?q=%E5%8F%AF%E8%83%BD%E8%87%AA%E5%AD%B8%E5%9C%98-%E5%8F%B0%E5%8C%97&t=&z=16&ie=UTF8&iwloc=&output=embed" allowfullscreen loading="lazy"></iframe>
+  </div>
+</section>
+
 <!-- MEMBERS -->
 <section id="members">
   <div class="section-header reveal">
-    <h2>THE ROSTER</h2>
+    <h2>THE TEAM</h2>
     <div class="gold-rule"></div>
     <p>成員與導師</p>
   </div>
   <div class="reveal">
     <div class="mentor-label">MENTOR</div>
-    <div class="members-grid" style="margin-bottom:2rem;">
+    <div class="members-grid" style="margin-bottom:2rem; display:flex; justify-content:center;">
       <div class="member-badge">趙介亭</div>
     </div>
     <div class="mentor-label">MEMBERS</div>
@@ -1601,7 +1566,7 @@ footer {
 <!-- REGISTRATION -->
 <section id="register">
   <div class="section-header reveal">
-    <h2>YOUR INVITATION</h2>
+    <h2>ENROLL</h2>
     <div class="gold-rule"></div>
     <p>報名申請</p>
   </div>
@@ -1609,11 +1574,8 @@ footer {
     <form id="registerForm">
       <div class="form-group">
         <label>姓名 <span class="required">*</span></label>
+        <span style="font-size:0.75rem; color:var(--white); opacity:0.7; display:block; margin-bottom:0.4rem;">報名為實名制報名，所有參與者皆要獨立報名，請輸入自己的姓名，勿輸入多個姓名</span>
         <input type="text" class="form-input" name="name" placeholder="請輸入您的姓名" required>
-      </div>
-      <div class="form-group">
-        <label>人數 <span class="required">*</span></label>
-        <input type="number" class="form-input" name="count" placeholder="請輸入參加人數" min="1" max="50" required>
       </div>
       <div class="form-group">
         <label>身份 <span class="required">*</span></label>
@@ -1631,6 +1593,11 @@ footer {
             <span class="radio-label">其他參與者</span>
           </label>
         </div>
+      </div>
+      <div class="form-group" id="relationGroup" style="display:none;">
+        <label>與學生關係 <span class="required">*</span></label>
+        <span style="font-size:0.75rem; color:var(--white); opacity:0.7; display:block; margin-bottom:0.4rem;">請輸入您是「OO(學生)爸爸/媽媽/公婆...」，若非學生家屬請輸入「無關係」</span>
+        <input type="text" class="form-input" name="count" placeholder="請輸入您與學生的關係" min="1" max="50">
       </div>
       <button type="submit" class="submit-btn" id="submitBtn">提交報名</button>
     </form>
@@ -1694,7 +1661,9 @@ form.addEventListener('submit', function(e) {
   var name = form.name.value.trim();
   var count = form.count.value;
   var identity = form.identity.value;
-  if (!name || !count || !identity) { alert('請填寫所有必填欄位'); return; }
+  var relation = form.relation ? form.relation.value.trim() : '';
+  var needRelation = identity && identity !== '學生';
+  if (!name || !identity || (needRelation && !relation)) { alert('請填寫所有必填欄位'); return; }
 
   submitBtn.disabled = true;
   submitBtn.textContent = '提交中...';
@@ -1774,6 +1743,20 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
         row.style.display = (type === filter || type === '休息' || type === '其他') ? '' : 'none';
       }
     });
+  });
+});
+document.querySelectorAll('input[name="identity"]').forEach(function(radio) {
+  radio.addEventListener('change', function() {
+    var group = document.getElementById('relationGroup');
+    var input = group.querySelector('input');
+    if (this.value === '學生') {
+      group.style.display = 'none';
+      input.required = false;
+      input.value = '';
+    } else {
+      group.style.display = 'block';
+      input.required = true;
+    }
   });
 });
 </script>
